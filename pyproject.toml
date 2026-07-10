@@ -1,0 +1,22 @@
+[project]
+name = "retro-pixel-matrix-dither"
+description = "An advanced multi-ratio Bayer matrix dithering node for ComfyUI with edge protection."
+version = "1.0.0"
+license = "MIT" 
+
+classifiers = [
+    "Operating System :: OS Independent",
+]
+
+dependencies = ["numpy", "pillow"]
+
+[project.urls]
+Repository = "https://github.com/vitacon/ComfyUI-Retro-Pixel-Matrix-Dither"
+Documentation = "https://github.com/vitacon/ComfyUI-Retro-Pixel-Matrix-Dither/wiki"
+"Bug Tracker" = "https://github.com/vitacon/ComfyUI-Retro-Pixel-Matrix-Dither/issues"
+
+[tool.comfy]
+PublisherId = "vitacon"
+DisplayName = "Retro Pixel-Matrix Dither 👾"
+Icon = ""
+includes = ["__init__.py", "retro_matrix_dither.py", "requirements.txt", "README.md"]
