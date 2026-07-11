@@ -1,7 +1,7 @@
 [project]
 name = "retro-pixel-matrix-dither"
 description = "An advanced multi-ratio Bayer matrix dithering node for ComfyUI with edge protection."
-version = "1.1.0"
+version = "1.2.0"
 license = "MIT" 
 
 classifiers = [
