@@ -1,0 +1,12 @@
+# Python temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Linter caches
+.ruff_cache/
+.mypy_cache/
+
+# OS trash
+.DS_Store
+Thumbs.db

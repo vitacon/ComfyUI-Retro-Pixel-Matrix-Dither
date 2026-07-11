@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Retro Dither Matrix Tuner Pro 😉</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+        h1 { margin-top: 0; color: #fff; font-size: 24px; letter-spacing: -0.5px; }
+        p.subtitle { color: #888; margin-top: -10px; margin-bottom: 25px; font-size: 14px; }
+        
+        .controls {
+            position: sticky;
+            top: 0;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+            margin-bottom: 25px;
+            z-index: 100;
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            align-items: center;
+            border: 1px solid #2d2d2d;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        label { font-size: 11px; color: #aaa; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="range"].global-slider { 
+            width: 160px; 
+            accent-color: #ffffff;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        button {
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        #btn-export {
+            background-color: #ffffff;
+            color: #000000;
+        }
+        #btn-export:hover { background-color: #cccccc; }
+        
+        #btn-import, #btn-recalc {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            border: 1px solid #444;
+        }
+        #btn-import:hover, #btn-recalc:hover { 
+            background-color: #3d3d3d; 
+            border-color: #555; 
+        }
+        #btn-recalc {
+            border-color: #44aa44;
+        }
+        #btn-recalc:hover {
+            border-color: #66ff66;
+            background-color: #223e22;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 15px;
+        }
+        .card {
+            background-color: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+        .card.manual {
+            border-color: #ffffff;
+            background-color: #1f1f1f;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .color-badges {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 1px #000;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .preview-container {
+            display: flex;
+            gap: 10px;
+            background: #000000;
+            padding: 10px;
+            border-radius: 4px;
+            justify-content: center;
+            border: 1px solid #222;
+        }
+        .preview-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            color: #666;
+        }
+        canvas {
+            image-rendering: pixelated;
+            border: 1px solid #111;
+        }
+        
+        .interactive-zone {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-top: 4px;
+        }
+        .slider-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #888;
+        }
+        .value-display {
+            font-weight: bold;
+            color: #fff;
+        }
+        .track {
+            background-color: #2d2d2d;
+            height: 14px;
+            width: 100%;
+            position: relative;
+            cursor: ew-resize;
+            border-radius: 2px;
+            overflow: hidden;
+            border: 1px solid #3d3d3d;
+            touch-action: none;
+        }
+        .fill {
+            background-color: #ffffff;
+            height: 100%;
+            width: 0%;
+            pointer-events: none;
+        }
+        .status-tag {
+            font-size: 9px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #555;
+            letter-spacing: 0.5px;
+        }
+        .card.manual .status-tag {
+            color: #fff;
+            background: #444;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Retro Dither Matrix Tuner Pro</h1>
+    <p class="subtitle">Tweak individual matrix reliabilities by dragging. Click "Recalculate Coefficients" to auto-optimize global sliders to fit your manual style selections.</p>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>Max RGB Distance (<span id="val-md">105</span>)</label>
+            <input type="range" class="global-slider" id="param-md" min="1" max="255" value="105">
+        </div>
+        <div class="control-group">
+            <label>Color Weight (W_s) (<span id="val-cw">48</span>)</label>
+            <input type="range" class="global-slider" id="param-cw" min="0" max="300" value="48">
+        </div>
+        <div class="control-group">
+            <label>Brightness Weight (W_y) (<span id="val-bw">148</span>)</label>
+            <input type="range" class="global-slider" id="param-bw" min="0" max="300" value="148">
+        </div>
+        <div class="btn-group">
+            <button id="btn-recalc">Recalculate Coefficients</button>
+            <button id="btn-import">Load JSON Preset</button>
+            <button id="btn-export">Export JSON Preset</button>
+        </div>
+        <input type="file" id="file-selector" accept=".json" style="display: none;">
+    </div>
+
+    <div class="grid" id="matrix-grid"></div>
+
+    <script>
+        const EGA_PALETTE = [
+            [0, 0, 0], [0, 0, 170], [0, 170, 0], [0, 170, 170],
+            [170, 0, 0], [170, 0, 170], [170, 85, 0], [170, 170, 170],
+            [85, 85, 85], [85, 85, 255], [85, 255, 85], [85, 255, 255],
+            [255, 85, 85], [255, 85, 255], [255, 255, 85], [255, 255, 255]
+        ];
+        
+        const EGA_NAMES = [
+            "Black", "Blue", "Green", "Cyan", "Red", "Magenta", "Brown", "Light Gray",
+            "Dark Gray", "Light Blue", "Light Green", "Light Cyan", "Light Red", "Light Magenta", "Yellow", "White"
+        ];
+
+        const BAYER = [[0, 2], [3, 1]];
+        const MAX_PENALTY_REF = 350.0; 
+        
+        let colorPairs = [];
+        let manualOverrides = {}; 
+
+        function rgbToHsv(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            let max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, v = max;
+            let d = max - min;
+            s = max === 0 ? 0 : d / max;
+            if (max == min) { h = 0; } else {
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return [h, s, v];
+        }
+
+        function initPairs() {
+            colorPairs = [];
+            for (let a = 0; a < EGA_PALETTE.length; a++) {
+                for (let b = a + 1; b < EGA_PALETTE.length; b++) {
+                    colorPairs.push({ id: `${a}_${b}`, idxA: a, idxB: b });
+                }
+            }
+        }
+
+        function calculateAbsoluteConeDist(c1, c2, ws, wy) {
+            const y1 = (0.299 * c1[0] + 0.587 * c1[1] + 0.114 * c1[2]) / 255.0;
+            const y2 = (0.299 * c2[0] + 0.587 * c2[1] + 0.114 * c2[2]) / 255.0;
+            const dy = Math.abs(y1 - y2);
+
+            const hsvA = rgbToHsv(...c1);
+            const hsvB = rgbToHsv(...c2);
+
+            let dh = Math.abs(hsvA[0] - hsvB[0]);
+            if (dh > 0.5) dh = 1.0 - dh;
+            const angle_rad = dh * 2.0 * Math.PI;
+
+            const d_base_sq = (hsvA[1] * hsvA[1]) + (hsvB[1] * hsvB[1]) - (2.0 * hsvA[1] * hsvB[1] * Math.cos(angle_rad));
+            const d_base = Math.sqrt(Math.max(0.0, d_base_sq));
+
+            return Math.sqrt(Math.pow(ws * d_base, 2) + Math.pow(wy * dy, 2));
+        }
+
+        function calculateAutoReliability(pair, config) {
+            const c1 = EGA_PALETTE[pair.idxA];
+            const c2 = EGA_PALETTE[pair.idxB];
+            const penalty = calculateAbsoluteConeDist(c1, c2, config.cw, config.bw);
+            
+            let reliability = 100.0 * (1.0 - (penalty / MAX_PENALTY_REF));
+            return Math.max(0, Math.min(100, reliability));
+        }
+
+        function drawDither(canvas, idxA, idxB, vIndex) {
+            const ctx = canvas.getContext('2d');
+            const cA = EGA_PALETTE[idxA];
+            const cB = EGA_PALETTE[idxB];
+            const pSize = 4;
+
+            for (let y = 0; y < 8; y++) {
+                for (let x = 0; x < 8; x++) {
+                    const threshold = BAYER[y % 2][x % 2];
+                    const color = (vIndex > threshold) ? cB : cA;
+                    ctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+                    ctx.fillRect(x * pSize, y * pSize, pSize, pSize);
+                }
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('matrix-grid');
+            grid.innerHTML = '';
+
+            const config = {
+                md: parseFloat(document.getElementById('param-md').value),
+                cw: parseFloat(document.getElementById('param-cw').value),
+                bw: parseFloat(document.getElementById('param-bw').value)
+            };
+
+            colorPairs.forEach(pair => {
+                const c1 = EGA_PALETTE[pair.idxA];
+                const c2 = EGA_PALETTE[pair.idxB];
+                
+                const dr = c1[0] - c2[0];
+                const dg = c1[1] - c2[1];
+                const db = c1[2] - c2[2];
+                const rgbDist = Math.sqrt(0.299*dr*dr + 0.587*dg*dg + 0.114*db*db);
+
+                if (rgbDist > config.md) return;
+
+                const isManual = manualOverrides[pair.id] !== undefined;
+                const reliability = isManual ? manualOverrides[pair.id] : calculateAutoReliability(pair, config);
+
+                const card = document.createElement('div');
+                card.className = `card ${isManual ? 'manual' : ''}`;
+                card.id = `card-${pair.id}`;
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="color-badges">
+                            <span class="badge" style="background-color:rgb(${c1.join(',')})">${EGA_NAMES[pair.idxA]}</span>
+                            <span style="color:#555; font-size:10px;">&plus;</span>
+                            <span class="badge" style="background-color:rgb(${c2.join(',')})">${EGA_NAMES[pair.idxB]}</span>
+                        </div>
+                        <span class="status-tag">${isManual ? 'Manual' : 'Auto'}</span>
+                    </div>
+                    <div class="preview-container">
+                        <div class="preview-box"><canvas id="can-${pair.id}-1" width="32" height="32"></canvas>75%</div>
+                        <div class="preview-box"><canvas id="can-${pair.id}-2" width="32" height="32"></canvas>50%</div>
+                        <div class="preview-box"><canvas id="can-${pair.id}-3" width="32" height="32"></canvas>25%</div>
+                    </div>
+                    <div class="interactive-zone">
+                        <div class="slider-label-row">
+                            <span>Matrix Reliability</span>
+                            <span class="value-display" id="lbl-${pair.id}">${reliability.toFixed(0)} %</span>
+                        </div>
+                        <div class="track" data-id="${pair.id}">
+                            <div class="fill" id="fill-${pair.id}" style="width: ${reliability}%"></div>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+
+                drawDither(document.getElementById(`can-${pair.id}-1`), pair.idxA, pair.idxB, 1);
+                drawDither(document.getElementById(`can-${pair.id}-2`), pair.idxA, pair.idxB, 2);
+                drawDither(document.getElementById(`can-${pair.id}-3`), pair.idxA, pair.idxB, 3);
+            });
+
+            attachSliderEvents();
+        }
+
+        function attachSliderEvents() {
+            document.querySelectorAll('.track').forEach(track => {
+                const handlePointer = (e) => {
+                    const rect = track.getBoundingClientRect();
+                    let offsetX = e.clientX - rect.left;
+                    let pct = Math.max(0, Math.min(100, (offsetX / rect.width) * 100));
+                    
+                    const id = track.dataset.id;
+                    
+                    document.getElementById(`fill-${id}`).style.width = pct + '%';
+                    document.getElementById(`lbl-${id}`).innerText = pct.toFixed(0) + ' %';
+                    
+                    manualOverrides[id] = pct;
+                    
+                    const card = document.getElementById(`card-${id}`);
+                    card.classList.add('manual');
+                    card.querySelector('.status-tag').innerText = 'Manual';
+                };
+
+                track.addEventListener('pointerdown', (e) => {
+                    track.setPointerCapture(e.pointerId);
+                    handlePointer(e);
+                    track.dataset.dragging = "true";
+                });
+
+                track.addEventListener('pointermove', (e) => {
+                    if (track.dataset.dragging === "true") {
+                        handlePointer(e);
+                    }
+                });
+
+                const stopDrag = (e) => {
+                    if (track.dataset.dragging === "true") {
+                        track.removeAttribute('data-dragging');
+                        track.releasePointerCapture(e.pointerId);
+                    }
+                };
+
+                track.addEventListener('pointerup', stopDrag);
+                track.addEventListener('pointercancel', stopDrag);
+            });
+        }
+
+        const sliders = ['md', 'cw', 'bw'];
+        sliders.forEach(id => {
+            document.getElementById(`param-${id}`).addEventListener('input', (e) => {
+                document.getElementById(`val-${id}`).innerText = e.target.value;
+                renderGrid();
+            });
+        });
+
+        // 2D GRID SEARCH OPTIMIZATION - With Trivial (0,0) Protection
+        document.getElementById('btn-recalc').addEventListener('click', () => {
+            const manualKeys = Object.keys(manualOverrides);
+            
+            if (manualKeys.length === 0) {
+                alert("No manual adjustments found! Tweak at least a few matrix cards manually first so the algorithm has something to train on.");
+                return;
+            }
+
+            let manualPairs = [];
+            manualKeys.forEach(id => {
+                const parsed = id.split("_");
+                const idxA = parseInt(parsed[0]);
+                const idxB = parseInt(parsed[1]);
+                const reliabilityPct = manualOverrides[id];
+                
+                const userPenalty = MAX_PENALTY_REF * (1.0 - (reliabilityPct / 100.0));
+                
+                manualPairs.push({
+                    idxA: idxA,
+                    idxB: idxB,
+                    userPenalty: userPenalty
+                });
+            });
+
+            let bestWs = 0;
+            let bestWy = 0;
+            let bestRmse = Infinity;
+
+            for (let wsTest = 0; wsTest <= 300; wsTest += 2) {
+                for (let wyTest = 0; wyTest <= 300; wyTest += 2) {
+                    // Skip the degenerate/trivial zero-weight state that breaks the model
+                    if (wsTest === 0 && wyTest === 0) continue; 
+                    
+                    let se = 0;
+                    for (let i = 0; i < manualPairs.length; i++) {
+                        const pair = manualPairs[i];
+                        const c1 = EGA_PALETTE[pair.idxA];
+                        const c2 = EGA_PALETTE[pair.idxB];
+                        
+                        const pred = calculateAbsoluteConeDist(c1, c2, wsTest, wyTest);
+                        se += Math.pow(pred - pair.userPenalty, 2);
+                    }
+                    
+                    const rmse = Math.sqrt(se / manualPairs.length);
+                    
+                    if (rmse < bestRmse) {
+                        bestRmse = rmse;
+                        bestWs = wsTest;
+                        bestWy = wyTest;
+                    }
+                }
+            }
+
+            document.getElementById('param-cw').value = bestWs;
+            document.getElementById('param-bw').value = bestWy;
+            document.getElementById('val-cw').innerText = bestWs;
+            document.getElementById('val-bw').innerText = bestWy;
+
+            let notice = "";
+            if (manualPairs.length < 3) {
+                notice = "\n\nTip: You only tweaked " + manualPairs.length + " item(s). For best results balancing Color vs. Brightness, try adjusting at least 2-3 contrasting pairs!";
+            }
+
+            alert(`2D OPTIMIZATION COMPLETED!\n\n` +
+                  `Analyzed items: ${manualPairs.length} manual updates\n` +
+                  `Recommended Color Weight (W_s): ${bestWs}\n` +
+                  `Recommended Brightness Weight (W_y): ${bestWy}\n` +
+                  `Model Average Error (RMSE): ${bestRmse.toFixed(2)} points${notice}`);
+
+            renderGrid();
+        });
+
+        // IMPORT JSON preset file
+        document.getElementById('btn-import').addEventListener('click', () => {
+            document.getElementById('file-selector').click();
+        });
+
+        document.getElementById('file-selector').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const importedData = JSON.parse(evt.target.result);
+                    
+                    if (importedData.meta && importedData.meta.global_params) {
+                        const gp = importedData.meta.global_params;
+                        if (gp.md !== undefined) document.getElementById('param-md').value = gp.md;
+                        if (gp.cw !== undefined) document.getElementById('param-cw').value = gp.cw;
+                        if (gp.bw !== undefined) document.getElementById('param-bw').value = gp.bw;
+                        
+                        sliders.forEach(id => {
+                            document.getElementById(`val-${id}`).innerText = document.getElementById(`param-${id}`).value;
+                        });
+                    }
+
+                    manualOverrides = {};
+                    if (importedData.weights) {
+                        for (const key in importedData.weights) {
+                            const item = importedData.weights[key];
+                            if (item.is_manual) {
+                                manualOverrides[key] = item.reliability_pct;
+                            }
+                        }
+                    }
+
+                    renderGrid();
+                } catch (err) {
+                    alert('Error parsing JSON file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        // EXPORT data to JSON
+        document.getElementById('btn-export').addEventListener('click', () => {
+            const config = {
+                md: parseFloat(document.getElementById('param-md').value),
+                cw: parseFloat(document.getElementById('param-cw').value),
+                bw: parseFloat(document.getElementById('param-bw').value)
+            };
+
+            let exportData = {
+                meta: { 
+                    description: "Tuned Retro Dither Model (H-S-Luminance Cone)", 
+                    global_params: config,
+                    reference_max_penalty: MAX_PENALTY_REF 
+                },
+                weights: {}
+            };
+
+            colorPairs.forEach(pair => {
+                const isManual = manualOverrides[pair.id] !== undefined;
+                const reliability = isManual ? manualOverrides[pair.id] : calculateAutoReliability(pair, config);
+                const backward_penalty = MAX_PENALTY_REF * (1.0 - (reliability / 100.0));
+
+                exportData.weights[`${pair.id}`] = {
+                    name_a: EGA_NAMES[pair.idxA],
+                    name_b: EGA_NAMES[pair.idxB],
+                    reliability_pct: parseFloat(reliability.toFixed(1)),
+                    penalty: parseFloat(backward_penalty.toFixed(2)),
+                    is_manual: isManual
+                };
+            });
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dither_model_data.json';
+            a.click();
+        });
+
+        initPairs();
+        renderGrid();
+    </script>
+</body>
+</html>
