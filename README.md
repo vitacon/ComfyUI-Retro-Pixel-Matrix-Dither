@@ -31,10 +31,23 @@ Each cell in the grid displays a 2x2 multi-ratio dither blend between two colors
 
 ### Calibration Examples
 
-| No Distance Limit (`-m 255 -cw 20 -bw 260`) | Balanced / Strict (`-m 150 -cw 50 -bw 100`) | New Experimental Sweetspot (`-m 105 -cw 20 -bw 260`) |
-| :---: | :---: | :---: |
-| ![Unfiltered](examples/patterns-255-20-260.png) | ![Balanced](examples/patterns-150-50-100.png) | ![Sweetspot](examples/patterns-105-20-260.png) |
-| *Every mix is allowed. High noise.* | `python retro_matrix_dither.py -w -m 150 -cw 50 -bw 100` | *Default. Clean, authentic hardware look.* |
+**Default Sweetspot (`-m 105 -cw 20 -bw 260`)**
+
+&nbsp;&nbsp;&nbsp;*Fine-tuned coeficients.*
+
+&nbsp;&nbsp;&nbsp;![Default](examples/patterns-105-20-260.png)
+
+**Balanced / Strict (`-m 150 -cw 50 -bw 100`)**
+
+&nbsp;&nbsp;&nbsp;*More combinations allowed with custom weights.*
+
+&nbsp;&nbsp;&nbsp;![Balanced](examples/patterns-150-50-100.png)
+
+**No Distance Limit (`-m 255 -cw 20 -bw 260`)**
+
+&nbsp;&nbsp;&nbsp;*Every mix is allowed. High noise.*
+
+&nbsp;&nbsp;&nbsp;![Unfiltered](examples/patterns-255-20-260.png)
 
 ---
 
@@ -48,6 +61,40 @@ You don't need to install anything. You can launch it instantly directly from th
 * Alternatively, just download the `color-tuner.html` file from this repo and open it locally in any web browser.
 
 ---
+
+## 💻 Standalone CLI Usage
+The core algorithm can be executed directly from your terminal without launching ComfyUI. This is perfect for batch processing or quick parameter tuning.
+
+### Syntax
+
+	python retro_matrix_dither.py [input_path] [output_path] [options]
+
+### CLI Arguments Reference
+
+| Argument / Flag | Long Flag | Default | Description |
+| :---: | :---: | :---: | :---: |
+| input | Positional | None | Path to the source image file (Required unless using -w). |
+| output| Positional | [base]_16.png | Optional destination path. Defaults to input name with _16 suffix. |
+| -l | --pal | ega | Retro hardware preset (c64, atari, amiga, ega, ega-mod, gameboy, cga). |
+| -m | --max-dist | 105 | Maximum perceptual RGB distance allowed for color mixing (0-255). |
+| -e | --edge |0.5 | Edge protection multiplier. Higher values keep outlines cleaner. |
+| -cw | --color-weight | 20 | Saturation and Hue clashing penalty multiplier. |
+| -bw | --brightness-weight | 260 | Brightness/Luminance disparity penalty multiplier. |
+| -w |--show-patterns | Flag | Generates and saves the diagnostic patterns.png matrix preview. |
+
+### CLI Examples
+Basic processing with GameBoy aesthetic:
+
+	python retro_matrix_dither.py photo.png --pal gameboy
+
+High-protection crisp setup with custom output path:
+
+	python retro_matrix_dither.py art.png output_ega.png -e 1.2 -m 90
+
+Generate matrix preview sheet only (no input image needed):
+
+	python retro_matrix_dither.py -w --pal cga -cw 40 -bw 180
+
 
 ## History
 
